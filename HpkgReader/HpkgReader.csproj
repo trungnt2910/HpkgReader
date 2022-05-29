@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Target Name="GetSourceCommit" BeforeTargets="Build">
+    <ReadLinesFromFile File="SourceCommit.txt">
+      <Output TaskParameter="Lines" ItemName="_SourceCommitLines" />
+    </ReadLinesFromFile>
+  </Target>
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageId>HpkgReader</PackageId>
+    <Authors>trungnt2910</Authors>
+    <Title>Haiku HPKG package reader for .NET</Title>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/trungnt2910/HpkgReader</PackageProjectUrl>
+    <SourceCommit>@(_SourceCommitLines)</SourceCommit>
+    <Description>
+This package contains controller, model and helper objects for reading package files for the
+Haiku ("http://www.haiku-os.org") project.  Pkg files come in two types.  HPKR is a file
+format for providing a kind of catalogue of what is in a repository.  HPKG format is a file that describes
+a particular package.  At the time of writing, this library only supports HPKR although there is enough
+supporting material to easily provide a reader for HPKG.
+
+Note that this library (currently) only supports (signed) 32bit addressing in the HPKR files.
+
+The .NET version has been ported from https://github.com/haiku/haikudepotserver/tree/$(SourceCommit)/haikudepotserver-packagefile
+    </Description>
+    <Copyright>Copyright (C) 2022 Trung Nguyen</Copyright>
+    <PackageTags>Haiku;hpkg;hpkr</PackageTags>
+    <RepositoryUrl>https://github.com/trungnt2910/HpkgReader</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\.editorconfig" Link=".editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
+      <_Parameter1>HpkgReaderTests</_Parameter1>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.1" />
+    <PackageReference Include="SharpZipLib" Version="1.3.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\LICENSE.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Optional: Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+
+    <!-- Optional: Embed source files that are not tracked by the source control manager in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+
+    <!-- Optional: Build symbol package (.snupkg) to distribute the PDB containing Source Link -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+  </ItemGroup>
+
+</Project>

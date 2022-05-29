@@ -1,0 +1,1 @@
+# HpkgReader - Haiku `.hpkg` package reader for .NET
