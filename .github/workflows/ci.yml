@@ -13,6 +13,8 @@ on:
     - HpkgReader/**
     - HpkgReaderTests/**
     - .github/workflows/ci.yml
+    - README.md
+    - LICENSE.md
   pull_request:
     branches:
     - master
@@ -20,6 +22,8 @@ on:
     - HpkgReader/**
     - HpkgReaderTests/**
     - .github/workflows/ci.yml
+    - README.md
+    - LICENSE.md
 
 jobs:
   build:
