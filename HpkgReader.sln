@@ -10,7 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HpkgReaderTests", "HpkgReaderTests\HpkgReaderTests.csproj", "{0674B7AB-CDC6-46F6-BCF7-6B011F712FE5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HpkgReader.Tests", "HpkgReader.Tests\HpkgReader.Tests.csproj", "{0674B7AB-CDC6-46F6-BCF7-6B011F712FE5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

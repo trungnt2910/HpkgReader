@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Linq;
 
-namespace HpkgReader
+namespace HpkgReader.Tests
 {
 	/// <summary>
 	/// <para>This is a very simplistic test that checks that attributes are able to be converted into package DTO model 

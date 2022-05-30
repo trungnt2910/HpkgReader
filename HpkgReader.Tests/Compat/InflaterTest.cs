@@ -4,7 +4,7 @@ using System;
 using System.Text;
 using System.IO;
 
-namespace HpkgReaderTests.Compat
+namespace HpkgReader.Tests.Compat
 {
     internal class InflaterTest
     {

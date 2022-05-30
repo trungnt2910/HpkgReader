@@ -3,10 +3,11 @@
  * Distributed under the terms of the MIT License.
  */
 
+using HpkgReader.Model;
 using NUnit.Framework;
 using System;
 
-namespace HpkgReader.Model
+namespace HpkgReader.Tests.Model
 {
     public class PkgUrlTest
     {

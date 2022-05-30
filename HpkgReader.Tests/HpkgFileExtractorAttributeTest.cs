@@ -11,7 +11,7 @@ using System.IO;
 using System.Numerics;
 using System.Linq;
 
-namespace HpkgReader
+namespace HpkgReader.Tests
 {
     public class HpkgFileExtractorAttributeTest : AbstractHpkTest
 	{

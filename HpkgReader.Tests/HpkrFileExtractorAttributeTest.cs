@@ -9,7 +9,7 @@ using NUnit.Framework;
 using System.IO;
 using System.Numerics;
 
-namespace HpkgReader
+namespace HpkgReader.Tests
 {
     /// <summary>
     /// <para>This is a simplistic test that is just going to stream out some attributes from a known HPKR file and will

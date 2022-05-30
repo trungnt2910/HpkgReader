@@ -38,7 +38,7 @@ The .NET version has been ported from https://github.com/haiku/haikudepotserver/
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
-      <_Parameter1>HpkgReaderTests</_Parameter1>
+      <_Parameter1>HpkgReader.Tests</_Parameter1>
     </AssemblyAttribute>
   </ItemGroup>
 

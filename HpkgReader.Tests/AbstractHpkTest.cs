@@ -8,7 +8,7 @@ using NUnit.Framework;
 using System.Reflection;
 using System.IO;
 
-namespace HpkgReader
+namespace HpkgReader.Tests
 {
     public abstract class AbstractHpkTest
     {
@@ -22,7 +22,7 @@ namespace HpkgReader
         protected FileInfo PrepareTestFile(string resource)
         {
             Preconditions.CheckState(null != temporaryFolder);
-            using var resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"HpkgReaderTests.Resources.{resource}");
+            using var resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"HpkgReader.Tests.Resources.{resource}");
             var ms = new MemoryStream();
             resourceStream.CopyTo(ms);
             byte[] payload = ms.ToArray();

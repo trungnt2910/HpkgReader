@@ -11,7 +11,7 @@ on:
     - dev/**
     paths:
     - HpkgReader/**
-    - HpkgReaderTests/**
+    - HpkgReader.Tests/**
     - .github/workflows/ci.yml
     - README.md
     - LICENSE.md
@@ -20,7 +20,7 @@ on:
     - master
     paths:
     - HpkgReader/**
-    - HpkgReaderTests/**
+    - HpkgReader.Tests/**
     - .github/workflows/ci.yml
     - README.md
     - LICENSE.md
