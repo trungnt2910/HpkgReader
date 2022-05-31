@@ -4,6 +4,7 @@
  */
 
 using HpkgReader.Compat;
+using HpkgReader.Extensions;
 using HpkgReader.Model;
 using System.Numerics;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace HpkgReader
     /// that can more easily represent the package; essentially converting the low-level attributes into a higher-level
     /// package model object.</para>
     /// </summary>
-    class PkgFactory
+    public class PkgFactory
     {
 
         public Pkg CreatePackage(
@@ -34,14 +35,14 @@ namespace HpkgReader
             try
             {
                 return new Pkg(
-                        GetstringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_NAME),
+                        GetStringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_NAME),
                         CreateVersion(attributeContext, attribute.GetChildAttribute(AttributeId.PACKAGE_VERSION_MAJOR)),
                         CreateArchitecture(attributeContext, attribute.GetChildAttribute(AttributeId.PACKAGE_ARCHITECTURE)),
-                        GetstringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_VENDOR),
+                        GetStringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_VENDOR),
                         GetChildAttributesAsStrings(attributeContext, attribute.GetChildAttributes(AttributeId.PACKAGE_COPYRIGHT)),
                         GetChildAttributesAsStrings(attributeContext, attribute.GetChildAttributes(AttributeId.PACKAGE_LICENSE)),
-                        GetstringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_SUMMARY),
-                        GetstringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_DESCRIPTION),
+                        GetStringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_SUMMARY),
+                        GetStringAttributeValue(attributeContext, attribute, AttributeId.PACKAGE_DESCRIPTION),
                         TryCreateHomePagePkgUrl(attributeContext, attribute));
             }
             catch (HpkException he)
@@ -60,7 +61,7 @@ namespace HpkgReader
                 as string;
         }
 
-        private string GetstringAttributeValue(
+        private string GetStringAttributeValue(
                 AttributeContext attributeContext,
                 Attribute attribute,
                 AttributeId attributeId)

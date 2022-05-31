@@ -31,11 +31,6 @@ namespace HpkgReader.Model
 
         public abstract object GetValue(AttributeContext context);
 
-        public T GetValue<T>(AttributeContext context)
-        {
-            return (T)GetValue(context);
-        }
-
         public void SetChildAttributes(List<Attribute> value)
         {
             childAttributes = (null == value)

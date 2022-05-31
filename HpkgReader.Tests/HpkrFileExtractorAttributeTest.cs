@@ -4,6 +4,7 @@
  */
 
 using HpkgReader.Compat;
+using HpkgReader.Extensions;
 using HpkgReader.Model;
 using NUnit.Framework;
 using System.IO;

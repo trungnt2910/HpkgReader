@@ -4,12 +4,13 @@
  */
 
 using HpkgReader.Compat;
+using HpkgReader.Extensions;
 using HpkgReader.Model;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
-using System.Numerics;
 using System.Linq;
+using System.Numerics;
 
 namespace HpkgReader.Tests
 {
