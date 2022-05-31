@@ -30,7 +30,9 @@ jobs:
 
     env:
       BUILD_CONFIG: 'Release'
-      SOLUTION: 'HpkgReader.sln'
+      # Use a different solution to prevent building the net6.0-gtk app
+      # Currently there's no easy way to install the workload on the CI machine.
+      SOLUTION: 'HpkgReader.NoApp.sln'
 
     runs-on: windows-latest
 
