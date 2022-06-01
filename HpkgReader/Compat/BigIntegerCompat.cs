@@ -95,5 +95,41 @@ namespace HpkgReader.Compat
             }
             return (int)number;
         }
+
+        /// <summary>
+        /// Converts this BigInteger to a long. This conversion is analogous to a narrowing primitive conversion from long to int as defined in section 5.1.3 of The Java™ Language Specification:
+        /// if this BigInteger is too big to fit in a long, only the low-order 64 bits are returned. Note that this conversion can lose information about the overall magnitude of the BigInteger
+        /// value as well as return a result with the opposite sign.
+        /// </summary>
+        /// <returns>this <see cref="BigInteger"/> converted to a <see cref="long"/>.</returns>
+        public static long LongValue(this BigInteger number)
+        {
+            if (number > long.MaxValue || number < long.MinValue)
+            {
+                var bytes = number.ToByteArray();
+                return BitConverter.ToInt64(bytes, 0);
+            }
+            return (long)number;
+        }
+
+        /// <summary>
+        /// Returns a BigInteger whose value is (this / val).
+        /// </summary>
+        /// <param name="val">value by which this BigInteger is to be divided.</param>
+        /// <returns>this / <paramref name="val"/></returns>
+        public static BigInteger Divide(this BigInteger number, BigInteger val)
+        {
+            return number / val;
+        }
+
+        /// <summary>
+        /// Returns a BigInteger whose value is (this * val).
+        /// </summary>
+        /// <param name="val">value to be multiplied by this BigInteger.</param>
+        /// <returns>this * <paramref name="val"/></returns>
+        public static BigInteger Multiply(this BigInteger number, BigInteger val)
+        {
+            return number * val;
+        }
     }
 }
