@@ -1,32 +1,34 @@
 using Gtk;
-using HpkgReader.Compat;
 using HpkgReader.Extensions;
-using HpkgReader.Model;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
-using Attribute = HpkgReader.Model.Attribute;
+using System.Text;
 using UI = Gtk.Builder.ObjectAttribute;
 
 namespace HpkgReader.Gtk
 {
     internal class MainWindow : Window
     {
-        [UI("VBox_Root")] private VBox _vBox_Root = null;
         [UI("ImageMenuItem_Open")] private ImageMenuItem _imageMenuItem_Open = null;
         [UI("Entry_Name")] private Entry _entry_Name = null;
         [UI("Entry_Version")] private Entry _entry_Version = null;
         [UI("Entry_Arch")] private Entry _entry_Arch = null;
         [UI("Entry_Vendor")] private Entry _entry_Vendor = null;
+        [UI("Entry_Packager")] private Entry _entry_Packager = null;
+        [UI("Entry_BasePackage")] private Entry _entry_BasePackage = null;
+        [UI("Entry_Flags")] private Entry _entry_Flags = null;
         [UI("Entry_Summary")] private Entry _entry_Summary = null;
         [UI("ComboBoxText_Copyrights")] private ComboBoxText _comboBox_Copyrights = null;
         [UI("ComboBoxText_Licenses")] private ComboBoxText _comboBox_Licenses = null;
         [UI("TextView_Description")] private TextView _textView_Description = null;
         [UI("Link_HomePage")] private LinkButton _link_HomePage = null;
+        [UI("Link_SourceUrl")] private LinkButton _link_SourceUrl = null;
+        [UI("TreeView_PackageContents")] private TreeView _treeView_PackageContents = null;
+        [UI("Button_FilePreview")] private Button _button_FilePreview = null;
+        [UI("Button_FileExport")] private Button _button_FileExport = null;
 
-        private readonly TreeView _treeView_PackageContents = new TreeView();
-        private readonly TreeStore _treeStore_Files = new TreeStore(typeof(string), typeof(string));
+        private readonly TreeStore _treeStore_Files = new TreeStore(typeof(HpkgDirectoryEntry));
+        private BetterPkg _currentPkg;
 
         public MainWindow() : this(new Builder("MainWindow.glade")) { }
 
@@ -36,8 +38,9 @@ namespace HpkgReader.Gtk
 
             DeleteEvent += Window_DeleteEvent;
             _imageMenuItem_Open.Activated += ImageMenuItem_Open_Clicked;
+            _button_FilePreview.Clicked += Button_FilePreview_Clicked;
 
-            TreeViewColumn CreateTreeViewTextColumn(string title, int colPos)
+            TreeViewColumn CreateTreeViewTextColumn(string title, int colPos, TreeCellDataFunc func)
             {
                 var col = new TreeViewColumn()
                 {
@@ -47,22 +50,98 @@ namespace HpkgReader.Gtk
                 var renderer = new CellRendererText();
                 col.PackStart(renderer, true);
                 col.AddAttribute(renderer, "text", colPos);
+                col.SetCellDataFunc(renderer, func);
 
                 return col;
             }
 
             _treeView_PackageContents.AppendColumn(
-                CreateTreeViewTextColumn("Name", 0)
-                );
+                CreateTreeViewTextColumn("Name", 0,
+                (column, cell, model, iter) =>
+                {
+                    var entry = (HpkgDirectoryEntry)model.GetValue(iter, 0);
+                    (cell as CellRendererText).Text = entry.Name;
+                }));
             _treeView_PackageContents.AppendColumn(
-                CreateTreeViewTextColumn("Size", 1)
-                );
+                CreateTreeViewTextColumn("Size", 1,
+                (column, cell, model, iter) =>
+                {
+                    var entry = (HpkgDirectoryEntry)model.GetValue(iter, 0);
+                    if (entry.FileType == HpkgFileType.FILE)
+                    {
+                        (cell as CellRendererText).Text = entry.Data?.SizeIfKnown()?.ToString() ?? "????";
+                    }
+                    else
+                    {
+                        (cell as CellRendererText).Text = "";
+                    }
+                }));
+            _treeView_PackageContents.AppendColumn(
+                CreateTreeViewTextColumn("Type", 2,
+                (column, cell, model, iter) =>
+                {
+                    var entry = (HpkgDirectoryEntry)model.GetValue(iter, 0);
+                    (cell as CellRendererText).Text = entry.FileType switch
+                    {
+                        HpkgFileType.FILE => "File",
+                        HpkgFileType.DIRECTORY => "Directory",
+                        HpkgFileType.SYMLINK => "Symlink",
+                        _ => "????"
+                    };
+                }));
+            _treeView_PackageContents.AppendColumn(
+                CreateTreeViewTextColumn("Date Modified", 3,
+                (column, cell, model, iter) =>
+                {
+                    var entry = (HpkgDirectoryEntry)model.GetValue(iter, 0);
+                    (cell as CellRendererText).Text = entry.FileModifiedTime?.ToString();
+                }));
+            _treeView_PackageContents.AppendColumn(
+                CreateTreeViewTextColumn("Date Created", 4,
+                (column, cell, model, iter) =>
+                {
+                    var entry = (HpkgDirectoryEntry)model.GetValue(iter, 0);
+                    (cell as CellRendererText).Text = entry.FileCreationTime?.ToString();
+                }));
+            _treeView_PackageContents.AppendColumn(
+                CreateTreeViewTextColumn("Date Accessed", 5,
+                (column, cell, model, iter) =>
+                {
+                    var entry = (HpkgDirectoryEntry)model.GetValue(iter, 0);
+                    (cell as CellRendererText).Text = entry.FileAccessTime?.ToString();
+                }));
+
+            _treeView_PackageContents.Selection.Changed += TreeView_PackageContents_SelectionChanged;
 
             _treeView_PackageContents.Model = _treeStore_Files;
+        }
 
-            _vBox_Root.Add(_treeView_PackageContents);
-            _vBox_Root.PackEnd(_treeView_PackageContents, true, true, 0);
-            _treeView_PackageContents.Show();
+        private void Button_FilePreview_Clicked(object sender, EventArgs e)
+        {
+            _treeStore_Files.GetIter(out var iter,
+                _treeView_PackageContents.Selection.GetSelectedRows()[0]);
+
+            var entry = _treeStore_Files.GetValue(iter, 0) as HpkgDirectoryEntry;
+
+            var contents = Encoding.Default.GetString(entry?.Data?.Read() ?? Array.Empty<byte>());
+
+            using var dialog = new FilePreviewDialog(contents)
+            {
+                Title = $"{Title} Preview: {entry.Name}"
+            };
+            dialog.Run();
+            dialog.Destroy();
+        }
+
+        private void TreeView_PackageContents_SelectionChanged(object sender, EventArgs e)
+        {
+            _button_FilePreview.Sensitive =
+                _treeView_PackageContents.Selection.CountSelectedRows() != 0 &&
+                _treeStore_Files.GetIter(out var iter, _treeView_PackageContents.Selection.GetSelectedRows()[0]) &&
+                (_treeStore_Files.GetValue(iter, 0) as HpkgDirectoryEntry)?.FileType == HpkgFileType.FILE;
+
+            // You can still export directories and symlinks.
+            _button_FileExport.Sensitive = _treeView_PackageContents.Selection.CountSelectedRows() != 0;
         }
 
         private void ImageMenuItem_Open_Clicked(object o, EventArgs args)
@@ -74,69 +153,89 @@ namespace HpkgReader.Gtk
             if (dialog.Run() == (int)ResponseType.Accept)
             {
                 var hpkgFile = dialog.Filename;
-                using var reader = new HpkgFileExtractor(new FileInfo(hpkgFile));
+                var pkg = new BetterPkg(hpkgFile);
+                var success = true;
 
-                var pkg = reader.CreatePkg();
-
-                _entry_Name.Text = pkg.Name;
-                _entry_Version.Text = pkg.Version.ToString();
-                _entry_Arch.Text = pkg.Architecture.ToString();
-                _entry_Vendor.Text = pkg.Vendor;
-                _entry_Summary.Text = pkg.Summary;
-
-                _comboBox_Copyrights.RemoveAll();
-                foreach (var copyright in pkg.Copyrights)
+                try
                 {
-                    _comboBox_Copyrights.AppendText(copyright);
-                }
-                // Display the most recent copyright holder.
-                _comboBox_Copyrights.Active = pkg.Copyrights.Count - 1;
+                    _entry_Name.Text = pkg.Name;
+                    _entry_Arch.Text = pkg.Architecture.ToString();
+                    _entry_Version.Text = pkg.BetterVersion.ToString();
+                    _entry_Vendor.Text = pkg.Vendor;
+                    _entry_Packager.Text = pkg.Packager;
+                    _entry_BasePackage.Text = string.IsNullOrEmpty(pkg.BasePackage) ? "<none>" : pkg.BasePackage;
+                    _entry_Flags.Text = pkg.Flags.ToString();
+                    _entry_Summary.Text = pkg.Summary;
 
-                _comboBox_Licenses.RemoveAll();
-                foreach (var license in pkg.Licenses)
+                    _comboBox_Copyrights.RemoveAll();
+                    foreach (var copyright in pkg.Copyrights)
+                    {
+                        _comboBox_Copyrights.AppendText(copyright);
+                    }
+                    // Display the most recent copyright holder.
+                    _comboBox_Copyrights.Active = pkg.Copyrights.Count - 1;
+
+                    _comboBox_Licenses.RemoveAll();
+                    foreach (var license in pkg.Licenses)
+                    {
+                        _comboBox_Licenses.AppendText(license);
+                    }
+                    _comboBox_Licenses.Active = 0;
+
+                    _textView_Description.Buffer.Text = pkg.Description;
+
+                    _link_HomePage.Uri = pkg.HomePageUrl.Url;
+                    _link_HomePage.Label = !string.IsNullOrEmpty(pkg.HomePageUrl.Name) ? pkg.HomePageUrl.Name : pkg.HomePageUrl.Url;
+                    _link_HomePage.EnsureLeftAlignment();
+
+                    _link_SourceUrl.Uri = pkg.SourceUrl.ToString();
+                    _link_SourceUrl.Label = pkg.SourceUrl.ToString();
+                    _link_SourceUrl.EnsureLeftAlignment();
+
+                    _treeStore_Files.Clear();
+                    ReadHpkgFiles(pkg);
+                }
+                catch (Exception)
                 {
-                    _comboBox_Licenses.AppendText(license);
+                    success = false;
                 }
-                _comboBox_Licenses.Active = 0;
 
-                _textView_Description.Buffer.Text = pkg.Description;
-                _link_HomePage.Uri = pkg.HomePageUrl.Url;
-                _link_HomePage.Label = string.IsNullOrEmpty(pkg.HomePageUrl.Name) ? pkg.HomePageUrl.Name : pkg.HomePageUrl.Url;
-
-                _treeStore_Files.Clear();
-                ReadHpkgFiles(reader);
+                if (success)
+                {
+                    _currentPkg?.Dispose();
+                    _currentPkg = pkg;
+                }
             }
             dialog.Destroy();
         }
 
         private void Window_DeleteEvent(object sender, DeleteEventArgs a)
         {
+            _currentPkg?.Dispose();
             Application.Quit();
         }
 
-        private void ReadHpkgFiles(HpkgFileExtractor reader)
+        private void ReadHpkgFiles(BetterPkg pkg)
         {
-            var toc = reader.GetToc();
-            var context = reader.GetTocContext();
-
-            void IterateToc(TreeIter iter, List<Attribute> attributes, AttributeContext context)
+            void IterateDirectory(TreeIter iter, List<HpkgDirectoryEntry> entries)
             {
-                foreach (var attr in attributes)
+                foreach (var entry in entries)
                 {
-                    if (attr.AttributeId == AttributeId.DIRECTORY_ENTRY)
+                    var childIter = _treeStore_Files.AppendValues(iter, entry);
+                    if (entry.FileType == HpkgFileType.DIRECTORY)
                     {
-                        var data = attr.TryGetChildAttribute(AttributeId.DATA);
-                        var size = data?.GetValue<ByteSource>(context).SizeIfKnown()?.ToString() ?? "";
-                        var childIter = _treeStore_Files.AppendValues(iter, attr.GetValue<string>(context), size);
-                        IterateToc(childIter, attr.GetChildAttributes(), context);
+                        IterateDirectory(childIter, entry.Children);
                     }
                 }
             }
 
-            foreach (var attr in toc)
+            foreach (var entry in pkg.DirectoryEntries)
             {
-                var iter = _treeStore_Files.AppendValues(attr.GetValue<string>(context), "0");
-                IterateToc(iter, attr.GetChildAttributes(), context);
+                var childIter = _treeStore_Files.AppendValues(entry);
+                if (entry.FileType == HpkgFileType.DIRECTORY)
+                {
+                    IterateDirectory(childIter, entry.Children);
+                }
             }
         }
     }
