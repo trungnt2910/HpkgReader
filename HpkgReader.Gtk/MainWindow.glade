@@ -149,7 +149,7 @@
         <child>
           <object class="GtkTable" id="Table_PackageProperties">
             <property name="visible">True</property>
-            <property name="n_rows">13</property>
+            <property name="n_rows">14</property>
             <property name="n_columns">3</property>
             <child>
               <object class="GtkLabel" id="Label_Name">
@@ -611,7 +611,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="Label_HomePage">
+              <object class="GtkLabel" id="Label_HomePageUrls">
                 <property name="visible">True</property>
                 <property name="label" translatable="yes">Home page:</property>
               </object>
@@ -623,12 +623,8 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLinkButton" id="Link_HomePage">
+              <object class="GtkComboBoxText" id="ComboBoxText_HomePageUrls">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="has_tooltip">True</property>
-                <property name="relief">none</property>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -639,7 +635,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="Button_EditHomePage">
+              <object class="GtkButton" id="Button_EditHomePageUrls">
                 <property name="label" translatable="yes">Edit</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -655,9 +651,9 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLabel" id="Label_SoureUrl">
+              <object class="GtkLabel" id="Label_SoureUrls">
                 <property name="visible">True</property>
-                <property name="label" translatable="yes">Source URL:</property>
+                <property name="label" translatable="yes">Source URLs:</property>
               </object>
               <packing>
                 <property name="top_attach">12</property>
@@ -667,12 +663,8 @@
               </packing>
             </child>
             <child>
-              <object class="GtkLinkButton" id="Link_SourceUrl">
+              <object class="GtkComboBoxText" id="ComboBoxText_SourceUrls">
                 <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="has_tooltip">True</property>
-                <property name="relief">none</property>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -683,7 +675,7 @@
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="Button_EditSourceUrl">
+              <object class="GtkButton" id="Button_EditSourceUrls">
                 <property name="label" translatable="yes">Edit</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -695,6 +687,32 @@
                 <property name="top_attach">12</property>
                 <property name="bottom_attach">13</property>
                 <property name="x_options">GTK_SHRINK</property>
+                <property name="y_options">GTK_SHRINK</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkHBox" id="HBox_PropertyActions">
+                <property name="visible">True</property>
+                <child>
+                  <object class="GtkButton" id="Button_MoreProperties">
+                    <property name="label" translatable="yes">More properties</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                  </object>
+                  <packing>
+                    <property name="expand">False</property>
+                    <property name="fill">False</property>
+                    <property name="pack_type">end</property>
+                    <property name="position">0</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="right_attach">3</property>
+                <property name="top_attach">13</property>
+                <property name="bottom_attach">14</property>
                 <property name="y_options">GTK_SHRINK</property>
               </packing>
             </child>

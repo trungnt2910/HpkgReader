@@ -9,24 +9,25 @@ namespace HpkgReader.Gtk
 {
     internal class MainWindow : Window
     {
-        [UI("ImageMenuItem_Open")] private ImageMenuItem _imageMenuItem_Open = null;
-        [UI("ImageMenuItem_SaveAs")] private ImageMenuItem _imageMenuItem_SaveAs = null;
-        [UI("Entry_Name")] private Entry _entry_Name = null;
-        [UI("Entry_Version")] private Entry _entry_Version = null;
-        [UI("Entry_Arch")] private Entry _entry_Arch = null;
-        [UI("Entry_Vendor")] private Entry _entry_Vendor = null;
-        [UI("Entry_Packager")] private Entry _entry_Packager = null;
-        [UI("Entry_BasePackage")] private Entry _entry_BasePackage = null;
-        [UI("Entry_Flags")] private Entry _entry_Flags = null;
-        [UI("Entry_Summary")] private Entry _entry_Summary = null;
-        [UI("ComboBoxText_Copyrights")] private ComboBoxText _comboBox_Copyrights = null;
-        [UI("ComboBoxText_Licenses")] private ComboBoxText _comboBox_Licenses = null;
-        [UI("TextView_Description")] private TextView _textView_Description = null;
-        [UI("Link_HomePage")] private LinkButton _link_HomePage = null;
-        [UI("Link_SourceUrl")] private LinkButton _link_SourceUrl = null;
-        [UI("TreeView_PackageContents")] private TreeView _treeView_PackageContents = null;
-        [UI("Button_FilePreview")] private Button _button_FilePreview = null;
-        [UI("Button_FileExport")] private Button _button_FileExport = null;
+        [UI("ImageMenuItem_Open")] private readonly ImageMenuItem _imageMenuItem_Open = null;
+        [UI("ImageMenuItem_SaveAs")] private readonly ImageMenuItem _imageMenuItem_SaveAs = null;
+        [UI("Entry_Name")] private readonly Entry _entry_Name = null;
+        [UI("Entry_Version")] private readonly Entry _entry_Version = null;
+        [UI("Entry_Arch")] private readonly Entry _entry_Arch = null;
+        [UI("Entry_Vendor")] private readonly Entry _entry_Vendor = null;
+        [UI("Entry_Packager")] private readonly Entry _entry_Packager = null;
+        [UI("Entry_BasePackage")] private readonly Entry _entry_BasePackage = null;
+        [UI("Entry_Flags")] private readonly Entry _entry_Flags = null;
+        [UI("Entry_Summary")] private readonly Entry _entry_Summary = null;
+        [UI("ComboBoxText_Copyrights")] private readonly ComboBoxText _comboBox_Copyrights = null;
+        [UI("ComboBoxText_Licenses")] private readonly ComboBoxText _comboBox_Licenses = null;
+        [UI("TextView_Description")] private readonly TextView _textView_Description = null;
+        [UI("ComboBoxText_HomePageUrls")] private readonly ComboBoxText _comboBox_HomePageUrls = null;
+        [UI("ComboBoxText_SourceUrls")] private readonly ComboBoxText _comboBox_SourceUrls = null;
+        [UI("TreeView_PackageContents")] private readonly TreeView _treeView_PackageContents = null;
+        [UI("Button_FilePreview")] private readonly Button _button_FilePreview = null;
+        [UI("Button_FileExport")] private readonly Button _button_FileExport = null;
+        [UI("Button_MoreProperties")] private readonly Button _button_MoreProperties = null;
 
         private readonly TreeStore _treeStore_Files = new TreeStore(typeof(HpkgDirectoryEntry));
         private BetterPkg _currentPkg;
@@ -41,6 +42,7 @@ namespace HpkgReader.Gtk
             _imageMenuItem_Open.Activated += ImageMenuItem_Open_Clicked;
             _imageMenuItem_SaveAs.Activated += ImageMenuItem_SaveAs_Clicked;
             _button_FilePreview.Clicked += Button_FilePreview_Clicked;
+            _button_MoreProperties.Clicked += Button_MoreProperties_Clicked;
 
             TreeViewColumn CreateTreeViewTextColumn(string title, int colPos, TreeCellDataFunc func)
             {
@@ -116,6 +118,16 @@ namespace HpkgReader.Gtk
             _treeView_PackageContents.Selection.Changed += TreeView_PackageContents_SelectionChanged;
 
             _treeView_PackageContents.Model = _treeStore_Files;
+        }
+
+        private void Button_MoreProperties_Clicked(object sender, EventArgs e)
+        {
+            if (_currentPkg == null)
+            {
+                return;
+            }
+
+            new MoreInfoWindow(_currentPkg).Show();
         }
 
         private void ImageMenuItem_SaveAs_Clicked(object sender, EventArgs e)
@@ -214,13 +226,19 @@ namespace HpkgReader.Gtk
 
                     _textView_Description.Buffer.Text = pkg.Description;
 
-                    _link_HomePage.Uri = pkg.HomePageUrl.Url;
-                    _link_HomePage.Label = !string.IsNullOrEmpty(pkg.HomePageUrl.Name) ? pkg.HomePageUrl.Name : pkg.HomePageUrl.Url;
-                    _link_HomePage.EnsureLeftAlignment();
+                    _comboBox_HomePageUrls.RemoveAll();
+                    foreach (var url in pkg.HomePageUrls)
+                    {
+                        _comboBox_HomePageUrls.AppendText(url.ToString());
+                    }
+                    _comboBox_HomePageUrls.Active = 0;
 
-                    _link_SourceUrl.Uri = pkg.SourceUrl.ToString();
-                    _link_SourceUrl.Label = !string.IsNullOrEmpty(pkg.SourceUrl.Name) ? pkg.SourceUrl.Name : pkg.SourceUrl.Url;
-                    _link_SourceUrl.EnsureLeftAlignment();
+                    _comboBox_SourceUrls.RemoveAll();
+                    foreach (var url in pkg.SourceUrls)
+                    {
+                        _comboBox_SourceUrls.AppendText(url.ToString());
+                    }
+                    _comboBox_SourceUrls.Active = 0;
 
                     _treeStore_Files.Clear();
                     ReadHpkgFiles(pkg);

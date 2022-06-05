@@ -83,6 +83,7 @@ namespace HpkgReader.Model
         public static readonly AttributeId PACKAGE_POST_INSTALL_SCRIPT = new AttributeId(52, "package:post-install-script", AttributeType.STRING);
         public static readonly AttributeId PACKAGE_IS_WRITABLE_DIRECTORY = new AttributeId(53, "package:is-writable-directory", AttributeType.INT);
         public static readonly AttributeId PACKAGE = new AttributeId(54, "package", AttributeType.STRING);
+        public static readonly AttributeId PACKAGE_PRE_UNINSTALL_SCRIPT = new AttributeId(55, "package:pre-uninstall-script", AttributeType.STRING);
 
         private readonly int code;
         private readonly string name;

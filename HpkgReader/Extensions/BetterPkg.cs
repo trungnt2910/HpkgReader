@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Numerics;
 using System.Reflection;
+using Attribute = HpkgReader.Model.Attribute;
 
 namespace HpkgReader.Extensions
 {
@@ -47,8 +48,20 @@ namespace HpkgReader.Extensions
         }
         public List<string> Copyrights { get; set; } = new List<string>();
         public List<string> Licenses { get; set; } = new List<string>();
-        public BetterPkgUrl HomePageUrl { get; set; }
-        public BetterPkgUrl SourceUrl { get; set; }
+        public List<BetterPkgUrl> HomePageUrls { get; set; } = new List<BetterPkgUrl>();
+        public List<BetterPkgUrl> SourceUrls { get; set; } = new List<BetterPkgUrl>();
+        public List<HpkgCompatibleEntity> Provides { get; set; } = new List<HpkgCompatibleEntity>();
+        public List<HpkgResolvableEntity> Requires { get; set; } = new List<HpkgResolvableEntity>();
+        public List<HpkgResolvableEntity> Supplements { get; set; } = new List<HpkgResolvableEntity>();
+        public List<HpkgResolvableEntity> Conflicts { get; set; } = new List<HpkgResolvableEntity>();
+        public List<HpkgResolvableEntity> Freshens { get; set; } = new List<HpkgResolvableEntity>();
+        public List<string> Replaces { get; set; } = new List<string>();
+        public List<HpkgGlobalWritableFile> GlobalWritableFiles { get; set; } = new List<HpkgGlobalWritableFile>();
+        public List<HpkgUserSettingsFile> UserSettingsFiles { get; set; } = new List<HpkgUserSettingsFile>();
+        public List<HpkgPackageUser> RequiredUsers { get; set; } = new List<HpkgPackageUser>();
+        public List<string> RequiredGroups { get; set; } = new List<string>();
+        public List<string> PostInstallScripts { get; set; } = new List<string>();
+        public List<string> PreUninstallScripts { get; set; } = new List<string>();
 
         public List<HpkgDirectoryEntry> DirectoryEntries { get; set; }
 
@@ -79,7 +92,7 @@ namespace HpkgReader.Extensions
                 .Where(a => a.AttributeId == AttributeId.DIRECTORY_ENTRY)
                 .Select(a => new HpkgDirectoryEntry(a, _tocContext))
                 .ToList();
-            
+
             foreach (var attr in packageAttributes)
             {
                 if (attr.AttributeId == AttributeId.PACKAGE_NAME)
@@ -121,27 +134,7 @@ namespace HpkgReader.Extensions
                 }
                 else if (attr.AttributeId == AttributeId.PACKAGE_VERSION_MAJOR)
                 {
-                    BetterVersion = new BetterPkgVersion();
-                    BetterVersion.Major = attr.GetValue<string>(_attributesContext);
-                    foreach (var childAttr in attr.GetChildAttributes())
-                    {
-                        if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_MINOR)
-                        {
-                            BetterVersion.Minor = childAttr.GetValue<string>(_attributesContext);
-                        }
-                        else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_MICRO)
-                        {
-                            BetterVersion.Micro = childAttr.GetValue<string>(_attributesContext);
-                        }
-                        else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_PRE_RELEASE)
-                        {
-                            BetterVersion.PreRelease = childAttr.GetValue<string>(_attributesContext);
-                        }
-                        else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_REVISION)
-                        {
-                            BetterVersion.Revision = childAttr.GetValue<BigInteger?>(_attributesContext)?.IntValue();
-                        }
-                    }
+                    BetterVersion = ReadVersionFromAttribute(attr, _attributesContext);
                 }
                 else if (attr.AttributeId == AttributeId.PACKAGE_COPYRIGHT)
                 {
@@ -164,7 +157,7 @@ namespace HpkgReader.Extensions
                     var url = attr.GetValue<string>(_attributesContext);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        HomePageUrl = new BetterPkgUrl(url);
+                        HomePageUrls.Add(new BetterPkgUrl(url));
                     }
                 }
                 else if (attr.AttributeId == AttributeId.PACKAGE_SOURCE_URL)
@@ -172,10 +165,173 @@ namespace HpkgReader.Extensions
                     var url = attr.GetValue<string>(_attributesContext);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        SourceUrl = new BetterPkgUrl(url);
+                        SourceUrls.Add(new BetterPkgUrl(url));
                     }
                 }
+                else if (attr.AttributeId == AttributeId.PACKAGE_PROVIDES)
+                {
+                    Provides.Add(ReadCompatibleEntityFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_REQUIRES)
+                {
+                    Requires.Add(ReadResolvableEntityFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_SUPPLEMENTS)
+                {
+                    Supplements.Add(ReadResolvableEntityFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_CONFLICTS)
+                {
+                    Conflicts.Add(ReadResolvableEntityFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_FRESHENS)
+                {
+                    Freshens.Add(ReadResolvableEntityFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_REPLACES)
+                {
+                    var replace = attr.GetValue<string>(_attributesContext);
+                    if (replace != null)
+                    {
+                        Replaces.Add(replace);
+                    }
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_CHECKSUM)
+                {
+                    throw new InvalidOperationException("How could you take your own checksum????");
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_GLOBAL_WRITABLE_FILE)
+                {
+                    GlobalWritableFiles.Add(ReadGlobalWritableFileFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_USER_SETTINGS_FILE)
+                {
+                    UserSettingsFiles.Add(ReadUserSettingsFileFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_USER)
+                {
+                    RequiredUsers.Add(ReadUserFromAttribute(attr, _attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_GROUP)
+                {
+                    RequiredGroups.Add(attr.GetValue<string>(_attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_POST_INSTALL_SCRIPT)
+                {
+                    PostInstallScripts.Add(attr.GetValue<string>(_attributesContext));
+                }
+                else if (attr.AttributeId == AttributeId.PACKAGE_PRE_UNINSTALL_SCRIPT)
+                {
+                    PreUninstallScripts.Add(attr.GetValue<string>(_attributesContext));
+                }
             }
+        }
+
+        private static BetterPkgVersion ReadVersionFromAttribute(Attribute attr, AttributeContext context)
+        {
+            var version = new BetterPkgVersion();
+            version.Major = attr.GetValue<string>(context);
+            foreach (var childAttr in attr.GetChildAttributes())
+            {
+                if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_MINOR)
+                {
+                    version.Minor = childAttr.GetValue<string>(context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_MICRO)
+                {
+                    version.Micro = childAttr.GetValue<string>(context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_PRE_RELEASE)
+                {
+                    version.PreRelease = childAttr.GetValue<string>(context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_REVISION)
+                {
+                    version.Revision = childAttr.GetValue<BigInteger?>(context)?.IntValue();
+                }
+            }
+            return version;
+        }
+
+        private static HpkgCompatibleEntity ReadCompatibleEntityFromAttribute(Attribute attr, AttributeContext context)
+        {
+            var entity = new HpkgCompatibleEntity();
+            entity.Name = attr.GetValue<string>(context);
+            foreach (var childAttr in attr.GetChildAttributes())
+            {
+                if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_MAJOR)
+                {
+                    entity.Version = ReadVersionFromAttribute(childAttr, context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_PROVIDES_COMPATIBLE)
+                {
+                    entity.CompatibleVersion = ReadVersionFromAttribute(childAttr, context);
+                }
+            }
+            return entity;
+        }
+
+        private static HpkgResolvableEntity ReadResolvableEntityFromAttribute(Attribute attr, AttributeContext context)
+        {
+            var entity = new HpkgResolvableEntity();
+            entity.Name = attr.GetValue<string>(context);
+            foreach (var childAttr in attr.GetChildAttributes())
+            {
+                if (childAttr.AttributeId == AttributeId.PACKAGE_RESOLVABLE_OPERATOR)
+                {
+                    entity.ResolvableOperator = (HpkgResolvableOperator)(int)childAttr.GetValue<BigInteger>(context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_MAJOR)
+                {
+                    entity.Version = ReadVersionFromAttribute(childAttr, context);
+                }
+            }
+            return entity;
+        }
+
+        private static HpkgGlobalWritableFile ReadGlobalWritableFileFromAttribute(Attribute attr, AttributeContext context)
+        {
+            var file = new HpkgGlobalWritableFile();
+            file.Path = attr.GetValue<string>(context);
+            file.UpdateType = (HpkgWritableFileUpdateType)
+                (attr.TryGetChildAttribute(AttributeId.PACKAGE_WRITABLE_FILE_UPDATE_TYPE)?.GetValue<BigInteger>(context).IntValue() ?? 0);
+            file.IsDirectory = attr.TryGetChildAttribute(AttributeId.PACKAGE_IS_WRITABLE_DIRECTORY)?.GetValue<BigInteger>(context).IntValue() == 1;
+            return file;
+        }
+
+        private static HpkgUserSettingsFile ReadUserSettingsFileFromAttribute(Attribute attr, AttributeContext context)
+        {
+            var file = new HpkgUserSettingsFile();
+            file.Path = attr.GetValue<string>(context);
+            file.TemplatePath = attr.TryGetChildAttribute(AttributeId.PACKAGE_SETTINGS_FILE_TEMPLATE)?.GetValue<string>(context);
+            file.IsDirectory = attr.TryGetChildAttribute(AttributeId.PACKAGE_IS_WRITABLE_DIRECTORY)?.GetValue<BigInteger>(context).IntValue() == 1;
+            return file;
+        }
+
+        private static HpkgPackageUser ReadUserFromAttribute(Attribute attr, AttributeContext context)
+        {
+            var user = new HpkgPackageUser();
+            user.Name = attr.GetValue<string>(context);
+            foreach (var childAttr in attr.GetChildAttributes())
+            {
+                if (childAttr.AttributeId == AttributeId.PACKAGE_USER_REAL_NAME)
+                {
+                    user.RealName = childAttr.GetValue<string>(context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_USER_HOME)
+                {
+                    user.Home = childAttr.GetValue<string>(context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_USER_SHELL)
+                {
+                    user.Shell = childAttr.GetValue<string>(context);
+                }
+                else if (childAttr.AttributeId == AttributeId.PACKAGE_USER_GROUP)
+                {
+                    user.Groups.Add(childAttr.GetValue<string>(context));
+                }
+            }
+            return user;
         }
 
         protected virtual void Dispose(bool disposing)

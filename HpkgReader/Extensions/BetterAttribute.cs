@@ -12,7 +12,7 @@ namespace HpkgReader.Extensions
     {
         public HpkgAttributeEncoding Encoding { get; set; }
         public bool HasChildren => (Children?.Count ?? 0) > 0;
-        public List<BetterAttribute> Children { get; set; }
+        public List<BetterAttribute> Children { get; set; } = new List<BetterAttribute>();
         public HpkgAttributeType Type { get; set; }
         public AttributeId Id { get; set; }
         public object Value { get; set; }
@@ -130,7 +130,28 @@ namespace HpkgReader.Extensions
 
         public BetterAttribute WithChildren(IEnumerable<BetterAttribute> children)
         {
-            Children = new List<BetterAttribute>(children);
+            Children.AddRange(children);
+            return this;
+        }
+
+        public BetterAttribute WithChild(BetterAttribute child)
+        {
+            Children.Add(child);
+            return this;
+        }
+
+        public BetterAttribute WithChildIfNotNull<T>(T obj, Func<T, BetterAttribute> childCreator)
+        {
+            if (obj != null)
+            {
+                Children.Add(childCreator(obj));
+            }
+            return this;
+        }
+
+        public BetterAttribute SetId(AttributeId id)
+        {
+            Id = id;
             return this;
         }
     }

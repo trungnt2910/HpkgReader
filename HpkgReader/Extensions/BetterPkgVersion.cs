@@ -30,6 +30,8 @@ namespace HpkgReader.Extensions
         /// <returns>A string that represents the stored version</returns>
         public override string ToString()
         {
+            // Follow the standard provided here:
+            //  https://www.haiku-os.org/docs/develop/packages/BuildingPackages.html#version-strings
             var sb = new StringBuilder();
             sb.Append(Major);
             if (!string.IsNullOrEmpty(Minor))
@@ -42,15 +44,11 @@ namespace HpkgReader.Extensions
                 sb.Append('.');
                 sb.Append(Micro);
             }
-            // PreRelease version tags are often
-            // prefixed with -
-            // For example, 0.0.1-dev.1
             if (!string.IsNullOrEmpty(PreRelease))
             {
-                sb.Append('-');
+                sb.Append('~');
                 sb.Append(PreRelease);
             }
-            // Hpkg recipe revision.
             if (Revision != null)
             {
                 sb.Append('-');

@@ -84,9 +84,62 @@ namespace HpkgReader.Extensions
             {
                 TryAdd(AttributeId.PACKAGE_LICENSE, licenses);
             }
-            TryAdd(AttributeId.PACKAGE_URL, package.HomePageUrl.ToString());
-            TryAdd(AttributeId.PACKAGE_SOURCE_URL, package.SourceUrl.ToString());
-
+            foreach (var url in package.HomePageUrls)
+            {
+                TryAdd(AttributeId.PACKAGE_URL, url.ToString());
+            }
+            foreach (var url in package.SourceUrls)
+            {
+                TryAdd(AttributeId.PACKAGE_SOURCE_URL, url.ToString());
+            }
+            foreach (var entry in package.Provides)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_PROVIDES));
+            }
+            foreach (var entry in package.Requires)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_REQUIRES));
+            }
+            foreach (var entry in package.Supplements)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_SUPPLEMENTS));
+            }
+            foreach (var entry in package.Conflicts)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_CONFLICTS));
+            }
+            foreach (var entry in package.Freshens)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_FRESHENS));
+            }
+            foreach (var entry in package.Replaces)
+            {
+                TryAdd(AttributeId.PACKAGE_REPLACES, entry);
+            }
+            foreach (var entry in package.GlobalWritableFiles)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_GLOBAL_WRITABLE_FILE));
+            }
+            foreach (var entry in package.UserSettingsFiles)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_USER_SETTINGS_FILE));
+            }
+            foreach (var entry in package.RequiredUsers)
+            {
+                packageAttributes.Add(entry.ToAttribute(AttributeId.PACKAGE_USER));
+            }
+            foreach (var entry in package.RequiredGroups)
+            {
+                TryAdd(AttributeId.PACKAGE_GROUP, entry);
+            }
+            foreach (var entry in package.PostInstallScripts)
+            {
+                TryAdd(AttributeId.PACKAGE_POST_INSTALL_SCRIPT, entry);
+            }
+            foreach (var entry in package.PreUninstallScripts)
+            {
+                TryAdd(AttributeId.PACKAGE_PRE_UNINSTALL_SCRIPT, entry);
+            }
             header.attributes_length += (uint)heap.WriteAttributes(packageAttributes);
 
             heap.Complete();
