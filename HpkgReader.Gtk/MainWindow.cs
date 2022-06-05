@@ -10,6 +10,7 @@ namespace HpkgReader.Gtk
     internal class MainWindow : Window
     {
         [UI("ImageMenuItem_Open")] private ImageMenuItem _imageMenuItem_Open = null;
+        [UI("ImageMenuItem_SaveAs")] private ImageMenuItem _imageMenuItem_SaveAs = null;
         [UI("Entry_Name")] private Entry _entry_Name = null;
         [UI("Entry_Version")] private Entry _entry_Version = null;
         [UI("Entry_Arch")] private Entry _entry_Arch = null;
@@ -38,6 +39,7 @@ namespace HpkgReader.Gtk
 
             DeleteEvent += Window_DeleteEvent;
             _imageMenuItem_Open.Activated += ImageMenuItem_Open_Clicked;
+            _imageMenuItem_SaveAs.Activated += ImageMenuItem_SaveAs_Clicked;
             _button_FilePreview.Clicked += Button_FilePreview_Clicked;
 
             TreeViewColumn CreateTreeViewTextColumn(string title, int colPos, TreeCellDataFunc func)
@@ -116,6 +118,34 @@ namespace HpkgReader.Gtk
             _treeView_PackageContents.Model = _treeStore_Files;
         }
 
+        private void ImageMenuItem_SaveAs_Clicked(object sender, EventArgs e)
+        {
+            if (_currentPkg == null)
+            {
+                return;
+            }
+
+            using var dialog = new FileChooserDialog("Open a HPKG file", this, FileChooserAction.Save,
+                "Cancel", ResponseType.Cancel,
+                "Save", ResponseType.Accept,
+                null);
+            if (dialog.Run() == (int)ResponseType.Accept)
+            {
+                var hpkgFile = dialog.Filename;
+                try
+                {
+                    HpkgWriter.Write(_currentPkg, hpkgFile);
+                    using var messageDialog = new MessageDialog(this, DialogFlags.Modal, MessageType.Info, ButtonsType.Ok, "File successfully saved.");
+                    messageDialog.Run();
+                }
+                catch (Exception ex)
+                {
+                    using var messageDialog = new MessageDialog(this, DialogFlags.Modal, MessageType.Error, ButtonsType.Ok, $"Failed to save file: {ex}");
+                    messageDialog.Run();
+                }
+            }
+        }
+
         private void Button_FilePreview_Clicked(object sender, EventArgs e)
         {
             _treeStore_Files.GetIter(out var iter,
@@ -189,7 +219,7 @@ namespace HpkgReader.Gtk
                     _link_HomePage.EnsureLeftAlignment();
 
                     _link_SourceUrl.Uri = pkg.SourceUrl.ToString();
-                    _link_SourceUrl.Label = pkg.SourceUrl.ToString();
+                    _link_SourceUrl.Label = !string.IsNullOrEmpty(pkg.SourceUrl.Name) ? pkg.SourceUrl.Name : pkg.SourceUrl.Url;
                     _link_SourceUrl.EnsureLeftAlignment();
 
                     _treeStore_Files.Clear();

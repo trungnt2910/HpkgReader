@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics;
-using Attribute = HpkgReader.Model.Attribute;
+using System.Reflection;
 
 namespace HpkgReader.Extensions
 {
@@ -24,7 +24,7 @@ namespace HpkgReader.Extensions
         public string Summary { get; set; }
         public string Description { get; set; }
         public string Vendor { get; set; }
-        public string Packager { get; set; }
+        public string Packager { get; set; } = Assembly.GetExecutingAssembly().GetName().Name;
         public string BasePackage { get; set; }
         public PkgFlags Flags { get; set; }
         public PkgArchitecture? Architecture { get; set; }
@@ -47,8 +47,8 @@ namespace HpkgReader.Extensions
         }
         public List<string> Copyrights { get; set; } = new List<string>();
         public List<string> Licenses { get; set; } = new List<string>();
-        public PkgUrl HomePageUrl { get; set; }
-        public Uri SourceUrl { get; set; }
+        public BetterPkgUrl HomePageUrl { get; set; }
+        public BetterPkgUrl SourceUrl { get; set; }
 
         public List<HpkgDirectoryEntry> DirectoryEntries { get; set; }
 
@@ -164,7 +164,7 @@ namespace HpkgReader.Extensions
                     var url = attr.GetValue<string>(_attributesContext);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        HomePageUrl = new PkgUrl(url, PkgUrlType.HOMEPAGE);
+                        HomePageUrl = new BetterPkgUrl(url);
                     }
                 }
                 else if (attr.AttributeId == AttributeId.PACKAGE_SOURCE_URL)
@@ -172,7 +172,7 @@ namespace HpkgReader.Extensions
                     var url = attr.GetValue<string>(_attributesContext);
                     if (!string.IsNullOrEmpty(url))
                     {
-                        SourceUrl = new Uri(url);
+                        SourceUrl = new BetterPkgUrl(url);
                     }
                 }
             }
