@@ -137,7 +137,7 @@ namespace HpkgReader.Gtk
                 return;
             }
 
-            using var dialog = new FileChooserDialog("Open a HPKG file", this, FileChooserAction.Save,
+            using var dialog = new FileChooserDialog("Export HPKG", this, FileChooserAction.Save,
                 "Cancel", ResponseType.Cancel,
                 "Save", ResponseType.Accept,
                 null);
