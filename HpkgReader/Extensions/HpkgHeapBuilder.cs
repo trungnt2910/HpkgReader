@@ -205,6 +205,11 @@ namespace HpkgReader.Extensions
             return length;
         }
 
+        public int Write(HeapCoordinates value)
+        {
+            return Write((BigInteger)value.Length, false) + Write((BigInteger)value.Offset, false);
+        }
+
         public int WriteAttributeTag(HpkgAttributeEncoding encoding, bool hasChildren, HpkgAttributeType dataType, int id)
         {
             var value =
@@ -275,6 +280,8 @@ namespace HpkgReader.Extensions
                             totalSize += Write((byte[])attribute.Value);
                         break;
                         case HpkgAttributeEncoding.RAW_HEAP:
+                            totalSize += Write((HeapCoordinates)attribute.Value);
+                        break;
                         default:
                             throw new NotImplementedException();
                     }

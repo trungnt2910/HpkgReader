@@ -12,7 +12,7 @@ namespace HpkgReader.Extensions
         public string Minor { get; set; }
         public string Micro { get; set; }
         public string PreRelease { get; set; }
-        public int? Revision { get; set; }
+        public uint? Revision { get; set; }
 
         public static explicit operator PkgVersion(BetterPkgVersion betterVersion)
         {
@@ -21,7 +21,7 @@ namespace HpkgReader.Extensions
                 betterVersion.Minor,
                 betterVersion.Micro,
                 betterVersion.PreRelease,
-                betterVersion.Revision);
+                (int?)betterVersion.Revision);
         }
 
         /// <summary>

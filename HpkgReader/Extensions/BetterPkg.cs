@@ -42,7 +42,7 @@ namespace HpkgReader.Extensions
                     Minor = value.Minor,
                     Micro = value.Micro,
                     PreRelease = value.PreRelease,
-                    Revision = value.Revision
+                    Revision = (uint?)value.Revision
                 };
             }
         }
@@ -247,7 +247,7 @@ namespace HpkgReader.Extensions
                 }
                 else if (childAttr.AttributeId == AttributeId.PACKAGE_VERSION_REVISION)
                 {
-                    version.Revision = childAttr.GetValue<BigInteger?>(context)?.IntValue();
+                    version.Revision = (uint?)childAttr.GetValue<BigInteger?>(context);
                 }
             }
             return version;

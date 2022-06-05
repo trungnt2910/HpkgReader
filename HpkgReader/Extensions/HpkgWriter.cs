@@ -19,6 +19,8 @@ namespace HpkgReader.Extensions
         // See: https://github.com/haiku/haiku/blob/master/docs/develop/packages/FileFormat.rst
         private const ushort WRITER_VERSION = 2;
         private const ushort WRITER_MINOR_VERSION = 1;
+        // #include <os/package/hpkg>
+        private const int B_HPKG_MAX_INLINE_DATA_SIZE = 8;
 
         /// <summary>
         /// Writes the contents of a <see cref="BetterPkg"/> to a file.
@@ -41,11 +43,38 @@ namespace HpkgReader.Extensions
             header.heap_compression = (ushort)HeapCompression.ZLIB;
             header.heap_chunk_size = CHUNK_SIZE;
 
-            // This is a naive implementation that writes every value (strings, bytes,...) inline.
+            // This is a naive implementation that writes:
+            // - Every strings, raw bytes,... inline.
+            // - Every file's content in the heap.
             var heap = new HpkgHeapBuilder(tempDir, HeapCompression.ZLIB, CHUNK_SIZE);
+
+            long currentHeapIndex = 0;
+            var heapCoordsDict = new Dictionary<HpkgDirectoryEntry, HeapCoordinates>();
+
+            var entries = new List<HpkgDirectoryEntry>(package.DirectoryEntries);
+            for (int i = 0; i < entries.Count; ++i)
+            {
+                var entry = entries[i];
+                switch (entry.FileType)
+                {
+                    case HpkgFileType.FILE:
+                        var bytes = entry.Data?.Read();
+                        if (bytes != null && bytes.Length > B_HPKG_MAX_INLINE_DATA_SIZE)
+                        {
+                            heap.Write(bytes);
+                            heapCoordsDict.Add(entry, new HeapCoordinates(currentHeapIndex, bytes.Length));
+                            currentHeapIndex += bytes.Length;
+                        }
+                    break;
+                    case HpkgFileType.DIRECTORY:
+                        entries.AddRange(entry.Children);
+                    break;
+                }
+            }
+
             // Build the TOC first.
             header.toc_length = 
-                (ulong)heap.WriteAttributes(package.DirectoryEntries.Select(de => new BetterAttribute(de)));
+                (ulong)heap.WriteAttributes(package.DirectoryEntries.Select(de => new BetterAttribute(de, heapCoordsDict)));
             header.toc_strings_length = 0;
             header.toc_strings_count = 0;
 

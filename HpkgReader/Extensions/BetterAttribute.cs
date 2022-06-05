@@ -1,4 +1,5 @@
-﻿using HpkgReader.Model;
+﻿using HpkgReader.Heap;
+using HpkgReader.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,7 +24,7 @@ namespace HpkgReader.Extensions
             Value = value;
         }
 
-        public BetterAttribute(HpkgDirectoryEntry entry)
+        public BetterAttribute(HpkgDirectoryEntry entry, Dictionary<HpkgDirectoryEntry, HeapCoordinates> heapCoordinatesDictionary = null)
             : this(AttributeId.DIRECTORY_ENTRY, entry.Name)
         {
             GuessTypeAndEncoding();
@@ -31,30 +32,42 @@ namespace HpkgReader.Extensions
             {
                 new BetterAttribute(AttributeId.FILE_TYPE, (uint)entry.FileType).GuessTypeAndEncoding()
             };
-            AddChildIfNotNull(AttributeId.FILE_PERMISSIONS, entry.FilePermissions);
-            AddChildIfNotNull(AttributeId.FILE_USER, entry.FileUser);
-            AddChildIfNotNull(AttributeId.FILE_GROUP, entry.FileGroup);
-            AddChildIfNotNull(AttributeId.FILE_ATIME, ((DateTimeOffset?)entry.FileAccessTime)?.ToUnixTimeSeconds());
-            AddChildIfNotNull(AttributeId.FILE_ATIME_NANOS, ((DateTimeOffset?)entry.FileAccessTime)?.ToUnixTimeMilliseconds() % 1000 * 1000);
-            AddChildIfNotNull(AttributeId.FILE_MTIME, ((DateTimeOffset?)entry.FileModifiedTime)?.ToUnixTimeSeconds());
-            AddChildIfNotNull(AttributeId.FILE_MTIME_NANOS, ((DateTimeOffset?)entry.FileModifiedTime)?.ToUnixTimeMilliseconds() % 1000 * 1000);
-            AddChildIfNotNull(AttributeId.FILE_CRTIME, ((DateTimeOffset?)entry.FileCreationTime)?.ToUnixTimeSeconds());
-            AddChildIfNotNull(AttributeId.FILE_CRTIM_NANOS, ((DateTimeOffset?)entry.FileCreationTime)?.ToUnixTimeMilliseconds() % 1000 * 1000);
-            AddChildIfNotNull(AttributeId.FILE_ATTRIBUTE, entry.FileAttribute);
-            AddChildIfNotNull(AttributeId.FILE_ATTRIBUTE_TYPE, entry.FileAttributeType);
-            
+
+            // This stuff must be added _before_ AttributeId.FILE_ATTRIBUTE, else subtle bugs might happen.
+            // See haiku/src/kits/package/hpkg/PackageReaderImpl.cpp for more details.
             switch (entry.FileType)
             {
                 case HpkgFileType.FILE:
-                    AddChildIfNotNull(AttributeId.DATA, entry.Data?.Read());
+                    if (heapCoordinatesDictionary?.TryGetValue(entry, out HeapCoordinates coords) ?? false)
+                    {
+                        AddChildIfNotNull(AttributeId.DATA, coords);
+                    }
+                    else
+                    {
+                        AddChildIfNotNull(AttributeId.DATA, entry.Data?.Read());
+                    }
                 break;
                 case HpkgFileType.DIRECTORY:
-                    Children.AddRange(entry.Children.Select(c => new BetterAttribute(c)));
+                    Children.AddRange(entry.Children.Select(c => new BetterAttribute(c, heapCoordinatesDictionary)));
                 break;
                 case HpkgFileType.SYMLINK:
                     AddChildIfNotNull(AttributeId.SYMLINK_PATH, entry.Target);
                 break;
             }
+
+            AddChildIfNotNull(AttributeId.FILE_PERMISSIONS, (uint?)entry.FilePermissions);
+            AddChildIfNotNull(AttributeId.FILE_USER, entry.FileUser);
+            AddChildIfNotNull(AttributeId.FILE_GROUP, entry.FileGroup);
+            AddChildIfNotNull(AttributeId.FILE_ATIME, (uint?)(((DateTimeOffset?)entry.FileAccessTime)?.ToUnixTimeSeconds()));
+            AddChildIfNotNull(AttributeId.FILE_ATIME_NANOS, (uint?)(((DateTimeOffset?)entry.FileAccessTime)?.ToUnixTimeMilliseconds() % 1000 * 1000));
+            AddChildIfNotNull(AttributeId.FILE_MTIME, (uint?)(((DateTimeOffset?)entry.FileModifiedTime)?.ToUnixTimeSeconds()));
+            AddChildIfNotNull(AttributeId.FILE_MTIME_NANOS, (uint?)(((DateTimeOffset?)entry.FileModifiedTime)?.ToUnixTimeMilliseconds() % 1000 * 1000));
+            AddChildIfNotNull(AttributeId.FILE_CRTIME, (uint?)(((DateTimeOffset?)entry.FileCreationTime)?.ToUnixTimeSeconds()));
+            AddChildIfNotNull(AttributeId.FILE_CRTIM_NANOS, (uint?)(((DateTimeOffset?)entry.FileCreationTime)?.ToUnixTimeMilliseconds() % 1000 * 1000));
+
+            // Add this last.
+            AddChildIfNotNull(AttributeId.FILE_ATTRIBUTE, entry.FileAttribute);
+            AddChildIfNotNull(AttributeId.FILE_ATTRIBUTE_TYPE, entry.FileAttributeType);
         }
 
         public BetterAttribute(BetterPkgVersion version)
@@ -96,6 +109,7 @@ namespace HpkgReader.Extensions
                     Type = HpkgAttributeType.STRING;
                 break;
                 case byte[] _:
+                case HeapCoordinates _:
                     Type = HpkgAttributeType.RAW;
                 break;
             }
@@ -117,13 +131,16 @@ namespace HpkgReader.Extensions
                 case ulong _:
                 case long _:
                     Encoding = HpkgAttributeEncoding.INT_64_BIT;
-                    break;
+                break;
                 case string _:
                     Encoding = HpkgAttributeEncoding.STRING_INLINE;
-                    break;
+                break;
                 case byte[] _:
                     Encoding = HpkgAttributeEncoding.RAW_INLINE;
-                    break;
+                break;
+                case HeapCoordinates _:
+                    Encoding = HpkgAttributeEncoding.RAW_HEAP;
+                break;
             }
             return this;
         }
