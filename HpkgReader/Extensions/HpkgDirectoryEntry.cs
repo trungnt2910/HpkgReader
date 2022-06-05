@@ -23,8 +23,7 @@ namespace HpkgReader.Extensions
         public DateTime? FileAccessTime { get; set; }
         public DateTime? FileModifiedTime { get; set; }
         public DateTime? FileCreationTime { get; set; }
-        public string FileAttribute { get; set; }
-        public int? FileAttributeType { get; set; }
+        public List<HpkgExtendedFileAttribute> FileAttributes { get; set; }
 
         public HpkgDirectoryEntry(Attribute attribute, AttributeContext context)
         {
@@ -54,8 +53,7 @@ namespace HpkgReader.Extensions
             FileAccessTime = GetTimeFromAttributes(attribute, AttributeId.FILE_ATIME, AttributeId.FILE_ATIME_NANOS, context);
             FileModifiedTime = GetTimeFromAttributes(attribute, AttributeId.FILE_MTIME, AttributeId.FILE_MTIME_NANOS, context);
             FileCreationTime = GetTimeFromAttributes(attribute, AttributeId.FILE_CRTIME, AttributeId.FILE_CRTIM_NANOS, context);
-            FileAttribute = attribute.TryGetChildAttribute(AttributeId.FILE_ATTRIBUTE)?.GetValue<string>(context);
-            FileAttributeType = attribute.TryGetChildAttribute(AttributeId.FILE_ATTRIBUTE_TYPE)?.GetValue<BigInteger?>(context)?.IntValue();
+            FileAttributes = GetExtendedFileAttributesFromAttribute(attribute, context);
         }
 
         private DateTime? GetTimeFromAttributes(Attribute attribute, AttributeId attributeId, AttributeId attributeIdNanos, AttributeContext context)
@@ -66,6 +64,21 @@ namespace HpkgReader.Extensions
                 time += attribute.TryGetChildAttribute(attributeIdNanos)?.GetValue<BigInteger?>(context)?.Divide(1000).LongValue() ?? 0;
             }
             return (time != null) ? (DateTime?)DateTimeOffset.FromUnixTimeMilliseconds((long)time).UtcDateTime : null;
+        }
+
+        private List<HpkgExtendedFileAttribute> GetExtendedFileAttributesFromAttribute(Attribute attribute, AttributeContext context)
+        {
+            var result = new List<HpkgExtendedFileAttribute>();
+            var attributes = attribute.GetChildAttributes(AttributeId.FILE_ATTRIBUTE);
+            foreach (var fileAttribute in attributes)
+            {
+                var entry = new HpkgExtendedFileAttribute();
+                entry.Name = fileAttribute.GetValue<string>(context);
+                entry.Type = (uint?)fileAttribute.TryGetChildAttribute(AttributeId.FILE_ATTRIBUTE_TYPE).GetValue<BigInteger>(context);
+                entry.Data = fileAttribute.TryGetChildAttribute(AttributeId.DATA).GetValue<ByteSource>(context);
+                result.Add(entry);
+            }
+            return result;
         }
     }
 }

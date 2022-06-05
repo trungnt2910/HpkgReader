@@ -1,4 +1,5 @@
-﻿using HpkgReader.Heap;
+﻿using HpkgReader.Compat;
+using HpkgReader.Heap;
 using HpkgReader.Model;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace HpkgReader.Extensions
             Value = value;
         }
 
-        public BetterAttribute(HpkgDirectoryEntry entry, Dictionary<HpkgDirectoryEntry, HeapCoordinates> heapCoordinatesDictionary = null)
+        public BetterAttribute(HpkgDirectoryEntry entry, Dictionary<ByteSource, HeapCoordinates> heapCoordinatesDictionary = null)
             : this(AttributeId.DIRECTORY_ENTRY, entry.Name)
         {
             GuessTypeAndEncoding();
@@ -38,7 +39,7 @@ namespace HpkgReader.Extensions
             switch (entry.FileType)
             {
                 case HpkgFileType.FILE:
-                    if (heapCoordinatesDictionary?.TryGetValue(entry, out HeapCoordinates coords) ?? false)
+                    if ((entry.Data != null) && (heapCoordinatesDictionary?.TryGetValue(entry.Data, out HeapCoordinates coords) ?? false))
                     {
                         AddChildIfNotNull(AttributeId.DATA, coords);
                     }
@@ -66,8 +67,24 @@ namespace HpkgReader.Extensions
             AddChildIfNotNull(AttributeId.FILE_CRTIM_NANOS, (uint?)(((DateTimeOffset?)entry.FileCreationTime)?.ToUnixTimeMilliseconds() % 1000 * 1000));
 
             // Add this last.
-            AddChildIfNotNull(AttributeId.FILE_ATTRIBUTE, entry.FileAttribute);
-            AddChildIfNotNull(AttributeId.FILE_ATTRIBUTE_TYPE, entry.FileAttributeType);
+            foreach (var fa in entry.FileAttributes)
+            {
+                var faAttribute = new BetterAttribute(AttributeId.FILE_ATTRIBUTE, fa.Name)
+                    .GuessTypeAndEncoding()
+                    .WithChildIfNotNull(fa.Type, f => new BetterAttribute(AttributeId.FILE_ATTRIBUTE_TYPE, f).GuessTypeAndEncoding())
+                    .WithChildIfNotNull(fa.Data, d =>
+                     {
+                         if (heapCoordinatesDictionary?.TryGetValue(d, out HeapCoordinates coords) ?? false)
+                         {
+                             return new BetterAttribute(AttributeId.DATA, coords).GuessTypeAndEncoding();
+                         }
+                         else
+                         {
+                             return new BetterAttribute(AttributeId.DATA, d.Read()).GuessTypeAndEncoding();
+                         }
+                     });
+                Children.Add(faAttribute);
+            }
         }
 
         public BetterAttribute(BetterPkgVersion version)

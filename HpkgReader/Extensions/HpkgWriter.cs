@@ -1,4 +1,5 @@
-﻿using HpkgReader.Heap;
+﻿using HpkgReader.Compat;
+using HpkgReader.Heap;
 using HpkgReader.Model;
 using System.Collections.Generic;
 using System.IO;
@@ -49,7 +50,7 @@ namespace HpkgReader.Extensions
             var heap = new HpkgHeapBuilder(tempDir, HeapCompression.ZLIB, CHUNK_SIZE);
 
             long currentHeapIndex = 0;
-            var heapCoordsDict = new Dictionary<HpkgDirectoryEntry, HeapCoordinates>();
+            var heapCoordsDict = new Dictionary<ByteSource, HeapCoordinates>();
 
             var entries = new List<HpkgDirectoryEntry>(package.DirectoryEntries);
             for (int i = 0; i < entries.Count; ++i)
@@ -62,13 +63,23 @@ namespace HpkgReader.Extensions
                         if (bytes != null && bytes.Length > B_HPKG_MAX_INLINE_DATA_SIZE)
                         {
                             heap.Write(bytes);
-                            heapCoordsDict.Add(entry, new HeapCoordinates(currentHeapIndex, bytes.Length));
+                            heapCoordsDict.Add(entry.Data, new HeapCoordinates(currentHeapIndex, bytes.Length));
                             currentHeapIndex += bytes.Length;
                         }
                     break;
                     case HpkgFileType.DIRECTORY:
                         entries.AddRange(entry.Children);
                     break;
+                }
+                foreach (var fileAttr in entry.FileAttributes)
+                {
+                    var bytes = fileAttr.Data?.Read();
+                    if (bytes != null && bytes.Length > B_HPKG_MAX_INLINE_DATA_SIZE)
+                    {
+                        heap.Write(bytes);
+                        heapCoordsDict.Add(fileAttr.Data, new HeapCoordinates(currentHeapIndex, bytes.Length));
+                        currentHeapIndex += bytes.Length;
+                    }
                 }
             }
 
