@@ -25,6 +25,11 @@ namespace HpkgReader.Extensions
         public DateTime? FileCreationTime { get; set; }
         public List<HpkgExtendedFileAttribute> FileAttributes { get; set; }
 
+        public HpkgDirectoryEntry()
+        {
+            FileAttributes = new List<HpkgExtendedFileAttribute>();
+        }
+
         public HpkgDirectoryEntry(Attribute attribute, AttributeContext context)
         {
             Debug.Assert(attribute.AttributeId == AttributeId.DIRECTORY_ENTRY, "Needs to be a directory entry.");
